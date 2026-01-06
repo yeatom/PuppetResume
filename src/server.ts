@@ -12,7 +12,7 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
   },
-  fileFilter: (req: express.Request, file: multer.File, cb: FileFilterCallback) => {
+  fileFilter: (req: express.Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     // 只接受图片文件
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -50,7 +50,7 @@ function bufferToDataURL(buffer: Buffer, mimeType: string): string {
  *    - avatar: 图片文件（可选）
  */
 interface MulterRequest extends Request {
-  file?: multer.File;
+  file?: Express.Multer.File;
 }
 
 app.post('/api/generate', upload.single('avatar'), async (req: MulterRequest, res: Response) => {
