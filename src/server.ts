@@ -24,6 +24,7 @@ try {
 }
 
 // 初始化微信云开发
+console.log('🚀 初始化云环境 ID:', envConfig.cloudEnv);
 cloud.init({
   env: envConfig.cloudEnv,
 });
