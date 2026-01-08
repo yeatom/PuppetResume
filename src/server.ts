@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import multer, { FileFilterCallback } from 'multer';
+import cloud from 'wx-server-sdk';
 import { ResumeGenerator } from './resumeGenerator';
 import { GeminiService } from './geminiService';
 import { ResumeAIService } from './resumeAIService';
@@ -9,6 +10,14 @@ const app = express();
 const generator = new ResumeGenerator();
 const gemini = new GeminiService();
 const aiService = new ResumeAIService();
+
+// 1. 确定最终要连接的环境 ID (用于部署自检)
+const FINAL_ENV_ID = process.env.CLOUD_ENV;
+if (FINAL_ENV_ID) {
+  cloud.init({
+    env: FINAL_ENV_ID,
+  });
+}
 
 // 配置 multer 用于文件上传
 const upload = multer({
@@ -147,15 +156,31 @@ app.get('/health', (req: Request, res: Response) => {
 const PORT = process.env.PORT || 80;
 
 async function startServer() {
-  // 🚀 部署自检：测试 Gemini 连通性
+  // 🚀 部署自检 1：测试 Gemini 连通性
   console.log('🔍 正在执行部署自检: Gemini 连通性...');
-  const check = await gemini.checkConnectivity();
+  const geminiCheck = await gemini.checkConnectivity();
   
-  if (check.success) {
-    console.log(`✅ ${check.message}`);
+  if (geminiCheck.success) {
+    console.log(`✅ ${geminiCheck.message}`);
   } else {
-    console.error(`❌ ${check.message}`);
-    console.error('📋 排查信息:', JSON.stringify(check.details, null, 2));
+    console.error(`❌ ${geminiCheck.message}`);
+    console.error('📋 排查信息:', JSON.stringify(geminiCheck.details, null, 2));
+  }
+
+  // 🚀 部署自检 2：测试 CLOUD_ENV 数据库连通性
+  if (FINAL_ENV_ID) {
+    console.log(`🔍 正在执行部署自检: 数据库连通性 (${FINAL_ENV_ID})...`);
+    try {
+      const db = cloud.database();
+      await db.collection('users').limit(1).get();
+      console.log('✅ 数据库连通性测试通过');
+    } catch (error: any) {
+      console.error('❌ 数据库连通性测试失败');
+      console.error('   错误代码:', error.errCode);
+      console.error('   详细信息:', error.errMsg);
+    }
+  } else {
+    console.log('ℹ️ 未检测到 CLOUD_ENV 环境变量，跳过数据库连通性自检');
   }
 
   app.listen(PORT, () => {
