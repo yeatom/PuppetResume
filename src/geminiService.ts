@@ -25,7 +25,7 @@ export class GeminiService {
     try {
       const genAI = new GoogleGenerativeAI(this.apiKey);
       const model = genAI.getGenerativeModel(
-        { model: "gemini-3-flash" },
+        { model: "gemini-2.0-flash" },
         { baseUrl: this.baseUrl }
       );
 
@@ -60,10 +60,10 @@ export class GeminiService {
 
   /**
    * 核心调用方法：带重试机制
-   * 优先调用 gemini-3-flash，失败后调用 gemini-2.5-pro
+   * 优先调用 gemini-2.0-flash，失败后调用 gemini-2.5-pro
    */
   async generateContent(prompt: string): Promise<string> {
-    const models = ["gemini-3-flash", "gemini-2.5-pro"];
+    const models = ["gemini-2.0-flash", "gemini-2.5-pro"];
     
     for (const modelName of models) {
       try {
