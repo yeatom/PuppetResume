@@ -106,6 +106,7 @@ export class GeminiService {
             }
           } catch (valError: any) {
             console.warn(`⚠️ ${modelName} 输出校验失败: ${valError.message}`);
+            console.warn(`📄 [非法内容快照] 如下: \n${text}`); // 🚀 在日志中记录非法内容
             throw valError; // 重新抛出以触发 catch 块中的重试逻辑
           }
         }
