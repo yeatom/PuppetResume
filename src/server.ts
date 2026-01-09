@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import multer, { FileFilterCallback } from 'multer';
-import cloud from 'wx-server-sdk';
+const tcb = require("@cloudbase/node-sdk");
 import { ResumeGenerator } from './resumeGenerator';
 import { GeminiService } from './geminiService';
 import { ResumeAIService } from './resumeAIService';
@@ -13,9 +13,13 @@ const aiService = new ResumeAIService();
 
 // 1. 确定最终要连接的环境 ID (用于部署自检)
 const FINAL_ENV_ID = process.env.CLOUD_ENV;
+let tcbApp: any;
+
 if (FINAL_ENV_ID) {
-  cloud.init({
+  tcbApp = tcb.init({
     env: FINAL_ENV_ID,
+    secretId: process.env.SecretId,
+    secretKey: process.env.SecretKey,
   });
 }
 
@@ -168,19 +172,18 @@ async function startServer() {
   }
 
   // 🚀 部署自检 2：测试 CLOUD_ENV 数据库连通性
-  if (FINAL_ENV_ID) {
+  if (tcbApp) {
     console.log(`🔍 正在执行部署自检: 数据库连通性 (${FINAL_ENV_ID})...`);
     try {
-      const db = cloud.database();
+      const db = tcbApp.database();
       await db.collection('users').limit(1).get();
       console.log('✅ 数据库连通性测试通过');
     } catch (error: any) {
       console.error('❌ 数据库连通性测试失败');
-      console.error('   错误代码:', error.errCode);
-      console.error('   详细信息:', error.errMsg);
+      console.error('   错误信息:', error.message || error);
     }
   } else {
-    console.log('ℹ️ 未检测到 CLOUD_ENV 环境变量，跳过数据库连通性自检');
+    console.log('ℹ️ 未检测到 CLOUD_ENV 或 TCB 配置，跳过数据库连通性自检');
   }
 
   app.listen(PORT, () => {
